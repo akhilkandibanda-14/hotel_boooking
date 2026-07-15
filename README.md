@@ -1,6 +1,6 @@
 # Hotel Revenue Prediction Service
 
-This is a background ML service that continuously trains models when new datasets are uploaded, logs reservation feeds via REST APIs, and uses hot-reloading to serve live revenue predictions.
+This is a background ML service that continuously trains models when new datasets are uploaded, logs reservation feeds via REST APIs, and serves date-based revenue predictions through a separate prediction endpoint.
 
 ## 1. Setup & Environment
 
@@ -12,7 +12,7 @@ Ensure you have Python 3.10+ installed and the virtual environment is set up.
   ```
 
 ---
-
+/docs to server so that we can examine the beackground serivce....
 ## 2. Execution
 
 ### Running the Automated Tests
@@ -35,7 +35,7 @@ Once started, the background training scheduler thread will run in the backgroun
 You can interact with the service using PowerShell or any HTTP client (like Postman or curl).
 
 ### A. Post to the Reservation Feed
-Send new reservation logs to the server. If the model is not trained yet, the reservation is still safely written to `reservations/reservation_log.csv` and returns `Predicted_Revenue: null` gracefully.
+Send new reservation logs to the server. The reservation endpoint only records the request and does not run a prediction.
 
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/reservation/" -Method Post -ContentType "application/json" -Body '{
@@ -57,7 +57,16 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/reservation/" -Method Post -Conten
 }'
 ```
 
-### B. Upload a Dataset for Continuous Training
+### B. Predict for a Specific Date
+Ask the prediction endpoint for revenue on a specific date.
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/predict/" -Method Post -ContentType "application/json" -Body '{
+  "Date": "2026-06-30"
+}'
+```
+
+### C. Upload a Dataset for Continuous Training
 Upload a CSV dataset. The background scheduler will automatically pick it up, merge it with previous datasets, retrain the Random Forest model, and write the new model to disk. The prediction engine will automatically hot-reload the updated assets on subsequent reservation feed requests.
 
 *Note: Replace `C:\path\to\your\dataset.csv` with the absolute path of your training file.*
@@ -67,7 +76,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/dataset/upload" -Method Post -Form
 }
 ```
 
-### C. Check Health
+### D. Check Health
 Verify if the service is running:
 ```powershell
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/health" -Method Get
